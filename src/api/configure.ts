@@ -9,6 +9,8 @@ import {
 export function configure(options: {
     enforceActions?: boolean | "strict" | "never" | "always" | "observed"
     computedRequiresReaction?: boolean
+    derivationRequiresObservable?: boolean
+    observablesRequiresReaction?: boolean
     computedConfigurable?: boolean
     isolateGlobalState?: boolean
     disableErrorBoundaries?: boolean
@@ -19,7 +21,9 @@ export function configure(options: {
         computedRequiresReaction,
         computedConfigurable,
         disableErrorBoundaries,
-        reactionScheduler
+        reactionScheduler,
+        derivationRequiresObservable,
+        observablesRequiresReaction
     } = options
     if (options.isolateGlobalState === true) {
         isolateGlobalState()
@@ -53,6 +57,12 @@ export function configure(options: {
     }
     if (computedRequiresReaction !== undefined) {
         globalState.computedRequiresReaction = !!computedRequiresReaction
+    }
+    if (derivationRequiresObservable !== undefined) {
+        globalState.derivationRequiresObservable = !!derivationRequiresObservable
+    }
+    if (observablesRequiresReaction !== undefined) {
+        globalState.observablesRequiresReaction = !!observablesRequiresReaction
     }
     if (computedConfigurable !== undefined) {
         globalState.computedConfigurable = !!computedConfigurable
