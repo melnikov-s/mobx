@@ -520,6 +520,22 @@ Use this if you want to check whether you are using computed properties without 
 configure({ computedRequiresReaction: true });
 ```
 
+#### `observablesRequiresReaction: boolean`
+Warns about any unobserved observable access.  
+Use this if you want to check whether you are using observables without a reactive context (eg react component without observer wrapping).
+
+```javascript
+configure({ observablesRequiresReaction: true });
+```
+
+#### `derivationRequiresObservable: boolean`
+Warns when a derivation (reaction, autorun, observer react component) is created without any observable access.  
+Use this to check whether you are unneededly wrapping react components with `observer`, or to find possible related bugs.
+
+```javascript
+configure({ derivationRequiresObservable: true });
+```
+
 #### `computedConfigurable: boolean`
 Allows overwriting computed values. This is useful for testing purposes *only*. Don't enable this
  on production as it can cause memory-leaks. 
