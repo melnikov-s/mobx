@@ -1,6 +1,7 @@
 # 5.14.0 / 4.14.0
 
-* Added `derivationRequiresObservable` & `observablesRequiresReaction` config [#2079](https://github.com/mobxjs/mobx/pull/2079), [Docs](https://github.com/mobxjs/mobx/pull/2082)
+* Added experimental `reactionRequiresObservable` & `observableRequiresReaction` config [#2079](https://github.com/mobxjs/mobx/pull/2079), [Docs](https://github.com/mobxjs/mobx/pull/2082)
+* Added experimental `requiresObservable` config to `reaction` & `autorun` options [#2079](https://github.com/mobxjs/mobx/pull/2079), [Docs](https://github.com/mobxjs/mobx/pull/2082)
 
 # 5.13.1 / 4.13.1
 

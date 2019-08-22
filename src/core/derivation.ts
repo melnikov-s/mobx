@@ -55,6 +55,11 @@ export interface IDerivation extends IDepTreeNode {
     __mapid: string
     onBecomeStale(): void
     isTracing: TraceMode
+
+    /**
+     *  warn if the derivation has no dependencies after creation/update
+     */
+    requiresObservable?: boolean
 }
 
 export class CaughtException {
@@ -183,16 +188,20 @@ export function trackDerivedFunction<T>(derivation: IDerivation, f: () => T, con
     bindDependencies(derivation)
 
     if (derivation.observing.length === 0) {
-        warnAboutDerivationWithoutDependencies(derivation.name)
+        warnAboutDerivationWithoutDependencies(derivation)
     }
 
     return result
 }
 
-function warnAboutDerivationWithoutDependencies(name: string) {
+function warnAboutDerivationWithoutDependencies(derivation: IDerivation) {
     if (process.env.NODE_ENV === "production") return
-    if (globalState.derivationRequiresObservable) {
-        console.warn(`[mobx] Derivation ${name} is created without reading any observable value`)
+    if (globalState.reactionRequiresObservable || derivation.requiresObservable) {
+        console.warn(
+            `[mobx] Derivation ${
+                derivation.name
+            } is created/updated without reading any observable value`
+        )
     }
 }
 

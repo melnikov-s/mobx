@@ -8,6 +8,8 @@ const persistentKeys: (keyof MobXGlobals)[] = [
     "spyListeners",
     "enforceActions",
     "computedRequiresReaction",
+    "reactionRequiresObservable",
+    "observableRequiresReaction",
     "disableErrorBoundaries",
     "runId",
     "UNCHANGED"
@@ -102,14 +104,16 @@ export class MobXGlobals {
     computedRequiresReaction = false
 
     /**
+     * (Experimental)
      * Warn if you try to create to derivation / reactive context without accessing any observable.
      */
-    derivationRequiresObservable = false
+    reactionRequiresObservable = false
 
     /**
+     * (Experimental)
      * Warn if observables are accessed outside a reactive context
      */
-    observablesRequiresReaction = false
+    observableRequiresReaction = false
 
     /**
      * Allows overwriting of computed properties, useful in tests but not prod as it can cause

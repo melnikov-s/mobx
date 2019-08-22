@@ -243,46 +243,146 @@ test("warn on unsafe reads of computed", function() {
         mobx.configure({ computedRequiresReaction: false })
     }
 })
-test("warn on unsafe reads of observable 1", function() {
-    try {
-        mobx.configure({ observablesRequiresReaction: true })
-        const x = mobx.observable({
-            y: 3
-        })
-        utils.consoleWarn(() => {
-            x.yy
-        }, /being read outside a reactive context/)
-    } finally {
-        mobx.configure({ observablesRequiresReaction: false })
-    }
-})
 
-test("warn on unsafe reads of observable array", function() {
-    try {
-        mobx.configure({ observablesRequiresReaction: true })
-        const x = mobx.observable({
-            arr: [1, 2, 3]
-        })
-        utils.consoleWarn(() => {
-            x.arr[1]
-        }, /being read outside a reactive context/)
-    } finally {
-        mobx.configure({ observablesRequiresReaction: false })
-    }
-})
+describe("observableRequiresReaction", function() {
+    test("warn on unsafe reads of observable", function() {
+        try {
+            mobx.configure({ observableRequiresReaction: true })
+            const x = mobx.observable({
+                y: 3
+            })
+            utils.consoleWarn(() => {
+                x.yy
+            }, /being read outside a reactive context/)
+        } finally {
+            mobx.configure({ observableRequiresReaction: false })
+        }
+    })
 
-test("warn on derivation creation without dependencies", function() {
-    try {
-        mobx.configure({ derivationRequiresObservable: true })
+    test("warn on unsafe reads of observable also when there are other subscriptions", function() {
+        try {
+            mobx.configure({ observableRequiresReaction: true })
+            const x = mobx.observable({
+                y: 3
+            })
 
-        utils.consoleWarn(() => {
-            const dispose = mobx.reaction(() => "plain value", newValue => newValue)
+            const dispose = mobx.autorun(() => x.y)
+
+            utils.consoleWarn(() => {
+                x.y
+            }, /being read outside a reactive context/)
 
             dispose()
-        }, /is created without reading any observable value/)
-    } finally {
-        mobx.configure({ derivationRequiresObservable: false })
-    }
+        } finally {
+            mobx.configure({ observableRequiresReaction: false })
+        }
+    })
+
+    test("warn on unsafe reads of observable array", function() {
+        try {
+            mobx.configure({ observableRequiresReaction: true })
+            const x = mobx.observable({
+                arr: [1, 2, 3]
+            })
+            utils.consoleWarn(() => {
+                x.arr[1]
+            }, /being read outside a reactive context/)
+        } finally {
+            mobx.configure({ observableRequiresReaction: false })
+        }
+    })
+    test("don't warn on reads inside batch - computed", function() {
+        try {
+            mobx.configure({ observableRequiresReaction: true })
+            const x = mobx.observable({
+                y: 1
+            })
+
+            const fooComputed = mobx.computed(() => x.y + 1)
+
+            const messages = utils.supressConsole(() => {
+                const dispose = mobx.autorun(() => fooComputed.get())
+                dispose()
+            })
+
+            expect(messages.length).toBe(0)
+        } finally {
+            mobx.configure({ observableRequiresReaction: false })
+        }
+    })
+
+    test("don't warn on reads inside batch - action", function() {
+        try {
+            mobx.configure({ observableRequiresReaction: true })
+            const x = mobx.observable({
+                y: 1
+            })
+
+            const fooAction = mobx.action(() => x.y)
+
+            const messages = utils.supressConsole(() => {
+                fooAction()
+            })
+
+            expect(messages.length).toBe(0)
+        } finally {
+            mobx.configure({ observableRequiresReaction: false })
+        }
+    })
+
+    test("don't warn on reads inside batch - transaction", function() {
+        try {
+            mobx.configure({ observableRequiresReaction: true })
+            const x = mobx.observable({
+                y: 1
+            })
+
+            const messages = utils.supressConsole(() => {
+                mobx.transaction(() => x.y)
+            })
+
+            expect(messages.length).toBe(0)
+        } finally {
+            mobx.configure({ observableRequiresReaction: false })
+        }
+    })
+
+    test("don't warn on reads inside batch - untracked inside autorun", function() {
+        try {
+            mobx.configure({ observableRequiresReaction: true })
+            const x = mobx.observable({
+                y: 1
+            })
+
+            const messages = utils.supressConsole(() => {
+                const disposer = mobx.autorun(() => {
+                    mobx.untracked(() => x.y)
+                })
+
+                disposer()
+            })
+
+            expect(messages.length).toBe(0)
+        } finally {
+            mobx.configure({ observableRequiresReaction: false })
+        }
+    })
+})
+
+describe("reactionRequiresObservable", function() {
+    test("warn on reaction creation without dependencies", function() {
+        try {
+            mobx.configure({ reactionRequiresObservable: true })
+
+            utils.consoleWarn(() => {
+                const dispose = mobx.reaction(() => "plain value", newValue => newValue)
+
+                dispose()
+            }, /is created\/updated without reading any observable value/)
+        } finally {
+            mobx.configure({ reactionRequiresObservable: false })
+        }
+    })
 })
 
 test("#1869", function() {
