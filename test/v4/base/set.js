@@ -276,3 +276,24 @@ test("toJS", () => {
     expect(z.x).not.toBe(x)
     expect(mobx.isObservable(z.x)).toBeFalsy()
 })
+
+test("only reacts to accessed values", () => {
+    let count = 0
+
+    const s = set()
+    autorun(() => {
+        s.has(1)
+        count++
+    })
+
+    s.add(2)
+    expect(count).toBe(1)
+    s.delete(1)
+    expect(count).toBe(1)
+    s.add(1)
+    expect(count).toBe(2)
+    s.delete(2)
+    expect(count).toBe(2)
+    s.delete(1)
+    expect(count).toBe(3)
+})

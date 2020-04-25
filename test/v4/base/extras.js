@@ -146,7 +146,7 @@ test("get atom", function() {
 
     expect(atom(c)).toBe(atomClassName) // returns ke, "bla".constructor, === "Atomys
     expect(atom(c, "a")).toBe(ovClassName) // returns ent, "bla".constructor, === "Atomry
-    expect(atom(c, "b")).toBe(ovClassName) // returns has entry (see autoru, "bla", "Atomn)
+    expect(atom(c, "b")).toBe(atomClassName) // returns has entry (see autoru, "bla", "Atomn)
     expect(() => atom(c, "c")).toThrowError(
         /the entry 'c' does not exist in the observable map 'ObservableMap@3'/
     )
@@ -235,6 +235,7 @@ test("get administration", function() {
 
     const ovClassName = mobx.observable.box(3).constructor.name
     const mapClassName = mobx.observable.map().constructor.name
+    const atomClassName = mobx.createAtom("test").constructor.name
 
     expect(adm(a)).toBe(ovClassName)
 
@@ -246,7 +247,7 @@ test("get administration", function() {
 
     expect(adm(c)).toBe(mapClassName)
     expect(adm(c, "a")).toBe(ovClassName)
-    expect(adm(c, "b")).toBe(ovClassName)
+    expect(adm(c, "b")).toBe(atomClassName)
     expect(() => adm(c, "c")).toThrowError(
         /the entry 'c' does not exist in the observable map 'ObservableMap@3'/
     )

@@ -8,7 +8,11 @@ import {
     isObservableMap,
     isObservableObject,
     isReaction,
-    isObservableSet
+    isObservableSet,
+    IAtom,
+    isPrimitiveValue,
+    createAtom,
+    stringifyKey
 } from "../internal"
 
 export function getAtom(thing: any, property?: string): IDepTreeNode {
@@ -75,4 +79,50 @@ export function getDebugName(thing: any, property?: string): string {
         named = getAdministration(thing)
     else named = getAtom(thing) // valid for arrays as well
     return named.name
+}
+
+export class HasMap {
+    private _map: Map<any, IAtom> | undefined
+    private _weakMap: WeakMap<object, IAtom> | undefined
+
+    constructor(private _namePrefix: string) {}
+
+    has(key: any): boolean {
+        return !!this.get(key)
+    }
+
+    get(key: any): IAtom | undefined {
+        return isPrimitiveValue(key) ? this._map?.get(key) : this._weakMap?.get(key)
+    }
+
+    reportObserved(key: any): void {
+        let entry: IAtom | undefined = this.get(key)
+
+        if (!entry) {
+            const name = `${this._namePrefix}.${stringifyKey(key)}?`
+            if (isPrimitiveValue(key)) {
+                if (!this._map) {
+                    this._map = new Map()
+                }
+
+                entry = createAtom(name, undefined, () => this._map?.delete(key))
+
+                this._map.set(key, entry)
+            } else {
+                if (!this._weakMap) {
+                    this._weakMap = new WeakMap()
+                }
+
+                entry = createAtom(name)
+
+                this._weakMap.set(key, entry)
+            }
+        }
+
+        entry.reportObserved()
+    }
+
+    reportChanged(key: any): void {
+        return this.get(key)?.reportChanged()
+    }
 }

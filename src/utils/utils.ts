@@ -23,6 +23,10 @@ export function fail(message: string | boolean): never {
     throw "X" // unreachable
 }
 
+export function isPrimitiveValue(val: unknown): boolean {
+    return !val || (typeof val !== "object" && typeof val !== "function")
+}
+
 export function invariant(check: false, message?: string | boolean): never
 export function invariant(check: true, message?: string | boolean): void
 export function invariant(check: any, message?: string | boolean): void

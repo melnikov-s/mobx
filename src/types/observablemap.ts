@@ -22,7 +22,6 @@ import {
     isSpyEnabled,
     makeIterable,
     notifyListeners,
-    referenceEnhancer,
     registerInterceptor,
     registerListener,
     spyReportEnd,
@@ -30,8 +29,8 @@ import {
     stringifyKey,
     transaction,
     untracked,
-    onBecomeUnobserved,
     globalState,
+    HasMap,
     convertToMap
 } from "../internal"
 import { IAtom } from "../core/atom"
@@ -84,7 +83,7 @@ export class ObservableMap<K = any, V = any>
     implements Map<K, V>, IInterceptable<IMapWillChange<K, V>>, IListenable {
     [$mobx] = ObservableMapMarker
     private _data: Map<K, ObservableValue<V>>
-    private _hasMap: Map<K, ObservableValue<boolean>> // hasMap, not hashMap >-).
+    private _hasMap: HasMap // hasMap, not hashMap >-).
     private _keysAtom: IAtom
     interceptors
     changeListeners
@@ -102,7 +101,7 @@ export class ObservableMap<K = any, V = any>
         }
         this._keysAtom = createAtom(`${this.name}.keys()`)
         this._data = new Map()
-        this._hasMap = new Map()
+        this._hasMap = new HasMap(this.name)
         this.merge(initialData)
     }
 
@@ -111,22 +110,11 @@ export class ObservableMap<K = any, V = any>
     }
 
     has(key: K): boolean {
-        if (!globalState.trackingDerivation) return this._has(key)
-
-        let entry = this._hasMap.get(key)
-        if (!entry) {
-            // todo: replace with atom (breaking change)
-            const newEntry = (entry = new ObservableValue(
-                this._has(key),
-                referenceEnhancer,
-                `${this.name}.${stringifyKey(key)}?`,
-                false
-            ))
-            this._hasMap.set(key, newEntry)
-            onBecomeUnobserved(newEntry, () => this._hasMap.delete(key))
+        if (globalState.trackingDerivation) {
+            this._hasMap.reportObserved(key)
         }
 
-        return entry.get()
+        return this._has(key)
     }
 
     set(key: K, value: V) {
@@ -175,7 +163,7 @@ export class ObservableMap<K = any, V = any>
             if (notifySpy && __DEV__) spyReportStart({ ...change, name: this.name, key })
             transaction(() => {
                 this._keysAtom.reportChanged()
-                this._updateHasMapEntry(key, false)
+                this._hasMap.reportChanged(key)
                 const observable = this._data.get(key)!
                 observable.setNewValue(undefined as any)
                 this._data.delete(key)
@@ -185,13 +173,6 @@ export class ObservableMap<K = any, V = any>
             return true
         }
         return false
-    }
-
-    private _updateHasMapEntry(key: K, value: boolean) {
-        let entry = this._hasMap.get(key)
-        if (entry) {
-            entry.setNewValue(value)
-        }
     }
 
     private _updateValue(key: K, newValue: V | undefined) {
@@ -228,7 +209,7 @@ export class ObservableMap<K = any, V = any>
             )
             this._data.set(key, observable)
             newValue = (observable as any).value // value might have been changed
-            this._updateHasMapEntry(key, true)
+            this._hasMap.reportChanged(key)
             this._keysAtom.reportChanged()
         })
         const notifySpy = isSpyEnabled()

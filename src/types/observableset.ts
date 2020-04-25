@@ -25,7 +25,9 @@ import {
     makeIterable,
     transaction,
     isES6Set,
-    IAtom
+    IAtom,
+    HasMap,
+    globalState
 } from "../internal"
 
 const ObservableSetMarker = {}
@@ -60,6 +62,7 @@ export class ObservableSet<T = any> implements Set<T>, IInterceptable<ISetWillCh
     [$mobx] = ObservableSetMarker
     private _data: Set<any> = new Set()
     private _atom: IAtom
+    private _hasMap: HasMap
     changeListeners
     interceptors
     dehancer: any
@@ -76,6 +79,7 @@ export class ObservableSet<T = any> implements Set<T>, IInterceptable<ISetWillCh
             )
         }
         this._atom = createAtom(this.name)
+        this._hasMap = new HasMap(this.name)
         this.enhancer = (newV, oldV) => enhancer(newV, oldV, name)
         if (initialData) {
             this.replace(initialData)
@@ -123,6 +127,7 @@ export class ObservableSet<T = any> implements Set<T>, IInterceptable<ISetWillCh
         if (!this.has(value)) {
             transaction(() => {
                 this._data.add(this.enhancer(value, undefined))
+                this._hasMap.reportChanged(value)
                 this._atom.reportChanged()
             })
             const notifySpy = isSpyEnabled()
@@ -167,6 +172,7 @@ export class ObservableSet<T = any> implements Set<T>, IInterceptable<ISetWillCh
             if (notifySpy && __DEV__) spyReportStart({ ...change, name: this.name })
             transaction(() => {
                 this._atom.reportChanged()
+                this._hasMap.reportChanged(value)
                 this._data.delete(value)
             })
             if (notify) notifyListeners(this, change)
@@ -177,7 +183,9 @@ export class ObservableSet<T = any> implements Set<T>, IInterceptable<ISetWillCh
     }
 
     has(value: any) {
-        this._atom.reportObserved()
+        if (globalState.trackingDerivation) {
+            this._hasMap.reportObserved(value)
+        }
         return this._data.has(this.dehanceValue(value))
     }
 
